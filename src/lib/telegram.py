@@ -51,11 +51,6 @@ class TelegramBot:
         application.add_handler(MessageHandler(filters.ChatType.PRIVATE, self.private_handler))
         application.run_polling()
 
-    async def show_info(self, update, context):
-        print("Show info")
-        message = update.message
-        print(message)
-
     async def group_handler(self, update, context):
         message = update.message
         if not self._is_message_for_handle(message) or self._is_message_from_bot(message):
@@ -63,6 +58,7 @@ class TelegramBot:
         check_text = message.text.lower()
         for regex, handler in self._group_check:
             if regex.match(check_text):
+                print("Group or person has access: text")
                 if not self._group_has_access(message) or not self._person_has_access(message):
                     print("Group or person has no access")
                     return await self._send_message(message, "You are not allowed to use this bot. Maybe you are crab or in past life you did something very very bad :)")
@@ -103,7 +99,10 @@ class TelegramBot:
         normalized_text = normalized_text.strip()
         response_text = await self._ai_handler.get_image_create_response(normalized_text)
         if response_text is not None:
-            await message.reply_photo(response_text)
+            if response_text.startswith("http"):
+                await message.reply_photo(response_text)
+                return
+            await self._send_message(message, response_text)
 
     def _image_change_process(self, message):
         pass
@@ -114,7 +113,8 @@ class TelegramBot:
             return False
         attrs = ["from_user", "chat", "text"]
         for attr in attrs:
-            if not hasattr(message, attr):
+            atr_val = getattr(message, attr, None)
+            if atr_val is None:
                 return False
         return True
 
