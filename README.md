@@ -3,9 +3,9 @@
 
 * Create env.dev file with params:
 
-  openai_api_key=<YOUR API KEY>
+  openai_api_key=< YOUR API KEY >
   
-  telegram_token=<TELEGRAM BOT TOKEN>
+  telegram_token=< TELEGRAM BOT TOKEN >
 
 * Build docker container:
 
