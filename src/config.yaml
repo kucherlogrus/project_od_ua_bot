@@ -1,0 +1,15 @@
+ai_settings:
+  chat_model_name: "gpt-3.5-turbo"
+  image_model_name: "davinci"
+  image_size: "256x256"
+  max_tokens: 4000
+  temperature: 1.0
+telegram_settings:
+  chat_trigger_regex: '(?=.*вал(ерка|ерчик|ерон|ера|ьтрон|ерончик|ьтрончик))(?=.*\?)'
+  image_trigger_regex: '(нарисуй|сгенерируй) (изображение|картинку):'
+  image_change_trigger_regex: '(отредактируй|измени) (изображение|картинку):'
+  white_lists_persons:
+  black_lists_persons:
+  white_lists_groups:
+  black_lists_groups:
+
