@@ -2,4 +2,4 @@ openai
 python-telegram-bot[webhooks]
 pyyaml
 requests-async
-Pillow
+Pillow==9.5.0
