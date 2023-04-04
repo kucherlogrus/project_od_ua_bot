@@ -2,7 +2,7 @@ ai_settings:
   chat_model_name: "gpt-3.5-turbo"
   image_model_name: "davinci"
   image_size: "512x512"
-  max_tokens: 4000
+  max_tokens: 3500
   temperature: 1.0
 telegram_settings:
   chat_trigger_regex: '(?=.*вал(ерка|ерчик|ерон|ера|ьтрон|ерончик|ьтрончик))(?=.*\?)'
