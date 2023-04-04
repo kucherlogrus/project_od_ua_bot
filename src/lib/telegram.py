@@ -4,8 +4,6 @@ from io import BytesIO
 from typing import List
 from PIL import Image
 
-import requests_async as requests
-from telegram import File
 from telegram.ext import Application, MessageHandler, filters
 from telegram.constants import ChatType
 
