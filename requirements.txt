@@ -1,3 +1,5 @@
 openai
 python-telegram-bot[webhooks]
 pyyaml
+requests-async
+Pillow

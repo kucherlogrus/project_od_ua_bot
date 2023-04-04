@@ -1,7 +1,7 @@
 ai_settings:
   chat_model_name: "gpt-3.5-turbo"
   image_model_name: "davinci"
-  image_size: "256x256"
+  image_size: "512x512"
   max_tokens: 4000
   temperature: 1.0
 telegram_settings:

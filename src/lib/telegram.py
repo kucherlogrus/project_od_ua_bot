@@ -1,8 +1,14 @@
 import os
 import re
+from io import BytesIO
 from typing import List
+from PIL import Image
 
+import requests_async as requests
+from telegram import File
 from telegram.ext import Application, MessageHandler, filters
+from telegram.constants import ChatType
+
 
 class TelegramBot:
 
@@ -33,12 +39,10 @@ class TelegramBot:
         self._chat_trigger_regex = re.compile(configuration.chat_trigger_regex)
         self._image_trigger_regex = re.compile(configuration.image_trigger_regex)
         self._image_change_trigger_regex = re.compile(configuration.image_change_trigger_regex)
-        self._init_handle_map()
-
-    def _init_handle_map(self):
-        self._group_check = [
+        self._triggers_check = [
             [self._image_trigger_regex, self._image_create_process],
             [self._chat_trigger_regex, self._text_chat_message_process],
+            [self._image_change_trigger_regex, self._image_change_process]
         ]
 
     def set_ai_handler(self, ai_handler):
@@ -46,39 +50,47 @@ class TelegramBot:
 
     def start_telegram_bot(self):
         application = Application.builder().token(self._token).build()
-        application.add_handler(MessageHandler(filters.ChatType.GROUP, self.group_handler))
-        application.add_handler(MessageHandler(filters.ChatType.SUPERGROUP, self.group_handler))
-        application.add_handler(MessageHandler(filters.ChatType.PRIVATE, self.private_handler))
+        application.add_handler(MessageHandler(filters.ChatType.GROUP, self.messages_handler))
+        application.add_handler(MessageHandler(filters.ChatType.SUPERGROUP, self.messages_handler))
+        application.add_handler(MessageHandler(filters.ChatType.PRIVATE, self.messages_handler))
         application.run_polling()
 
-    async def group_handler(self, update, context):
+    async def messages_handler(self, update, context):
         message = update.message
+        group_chat = message.chat.type in [ChatType.GROUP, ChatType.SUPERGROUP]
+        private_chat = message.chat.type == ChatType.PRIVATE
         if not self._is_message_for_handle(message) or self._is_message_from_bot(message):
             return
-        check_text = message.text.lower()
-        for regex, handler in self._group_check:
-            if regex.match(check_text):
-                print("Group or person has access: text")
-                if not self._group_has_access(message) or not self._person_has_access(message):
-                    print("Group or person has no access")
-                    return await self._send_message(message, "You are not allowed to use this bot. Maybe you are crab or in past life you did something very very bad :)")
-                await handler(message, check_text)
-                return
-
-    async def private_handler(self, update, context):
-        message = update.message
-        if not self._is_message_for_handle(message) or self._is_message_from_bot(message):
-            return
-        if not self._person_has_access(message):
+        if not self._person_has_access(message) or (group_chat and not self._group_has_access(message)):
             return await self._send_message(message, "You are not allowed to use this bot. Maybe you are crab or in past life you did something very very bad :)")
-
-        check_text = message.text.lower()
-
-        if self._image_trigger_regex.match(check_text):
-            await self._image_create_process(message, check_text)
+        is_text_message = message.text and len(message.text) > 0
+        is_image_message = message.photo is not None and len(message.photo) > 0
+        if is_text_message and not is_image_message:
+            text_message = message.text.lower()
+            for regex, handler in self._triggers_check:
+                if regex.match(text_message):
+                    await handler(message, text_message)
+                    return
+            if self._is_message_reply_to_bot(message):
+                is_replay_image = getattr(message.reply_to_message, "photo", None)
+                if is_replay_image is not None:
+                    await self._image_change_process(message, text_message)
+                    return
+                await self._text_chat_message_process(message, text_message)
+        if is_image_message is not None and is_text_message is None:
+            caption = message.caption.lower()
+            await self._image_change_process(message, caption)
             return
 
-        await self._text_chat_message_process(message, check_text)
+        if private_chat:
+            if is_text_message:
+                text_message = message.text.lower()
+                await self._text_chat_message_process(message, text_message)
+                return
+            if is_image_message:
+                caption = message.caption.lower()
+                await self._image_change_process(message, caption)
+                return
 
     async def _text_chat_message_process(self, message, check_text):
         data_to_send = []
@@ -104,18 +116,54 @@ class TelegramBot:
                 return
             await self._send_message(message, response_text)
 
-    def _image_change_process(self, message):
-        pass
+    async def _image_change_process(self, message, check_text):
+        normalized_text = re.sub(self._image_change_trigger_regex, "", check_text)
+        photos = message.photo
+        if photos is None or len(photos) == 0:
+            if message.reply_to_message is not None:
+                if message.reply_to_message.photo is not None and len(message.reply_to_message.photo) > 0:
+                    photos = message.reply_to_message.photo
+        if len(photos) == 0:
+            return await self._send_message(message, "I can't find image in your message")
+        photo_records = {p.file_id: {'w': p.width, 'h': p.height, 'obj': p} for p in photos}
+        f_id, w, h = self._ai_handler.get_image_to_change(photo_records)
+        photos_obj = photo_records[f_id]['obj']
+        t_file_obj = await photos_obj.get_file()
+        array: bytearray = await t_file_obj.download_as_bytearray()
+        buffer = BytesIO(array)
+        image = Image.open(buffer)
+        image = image.resize((w, h))
+        if image.mode == "RGB":
+            new_img = Image.new("RGBA", (w, h))
+            new_img.paste(image)
+            image = new_img
+        _output = BytesIO()
+        image.save(_output, format="PNG")
+        _output.seek(0)
+        background = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+        background.paste(image, (0, 500))
+        mask = BytesIO()
+        background.save(mask, format='PNG')
+        response_text = await self._ai_handler.get_image_variation_response(_output.getvalue(), mask.getvalue(), normalized_text)
+        if response_text is not None:
+            if response_text.startswith("http"):
+                await message.reply_photo(response_text)
+                return
+            await self._send_message(message, response_text)
 
     def _is_message_for_handle(self, message) -> bool:
         """Check if message have text, from_user and chat attributes for processing"""
         if message is None:
             return False
-        attrs = ["from_user", "chat", "text"]
+        attrs = ["from_user", "chat"]
         for attr in attrs:
             atr_val = getattr(message, attr, None)
             if atr_val is None:
                 return False
+        text_message = getattr(message, "text", None)
+        image_message = getattr(message, "photo", None) and getattr(message, "caption", None)
+        if text_message is None and image_message is None:
+            return False
         return True
 
     def _is_message_from_bot(self, message):
@@ -123,6 +171,12 @@ class TelegramBot:
         if from_user is None:
             return False
         return from_user.is_bot
+
+    def _is_message_reply_to_bot(self, message):
+        reply_to_message = message.reply_to_message
+        if reply_to_message is not None:
+            return self._is_message_from_bot(reply_to_message)
+        return False
 
     def _group_has_access(self, message):
         if self._check_group_whitelist:
