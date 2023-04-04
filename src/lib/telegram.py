@@ -72,7 +72,7 @@ class TelegramBot:
             if self._is_message_reply_to_bot(message):
                 reply = message.reply_to_message
                 is_replay_image = reply.photo is not None and len(reply.photo) > 0
-                if is_replay_image is not None:
+                if is_replay_image:
                     await self._image_change_process(message, text_message)
                     return
                 await self._text_chat_message_process(message, text_message)
