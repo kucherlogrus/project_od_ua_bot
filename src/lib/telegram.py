@@ -139,7 +139,7 @@ class TelegramBot:
         image.save(_output, format="PNG")
         _output.seek(0)
         background = Image.new('RGBA', (w, h), (0, 0, 0, 0))
-        background.paste(image, (0, 500))
+        background.paste(image, (50, 50, w-50, h-50))
         mask = BytesIO()
         background.save(mask, format='PNG')
         response_text = await self._ai_handler.get_image_variation_response(_output.getvalue(), mask.getvalue(), normalized_text)
