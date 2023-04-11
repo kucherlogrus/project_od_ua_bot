@@ -76,6 +76,7 @@ class TelegramBot:
                     await self._image_change_process(message, text_message)
                     return
                 await self._text_chat_message_process(message, text_message)
+                return
         if is_image_message is not None and is_text_message is None:
             caption = message.caption.lower()
             await self._image_change_process(message, caption)
