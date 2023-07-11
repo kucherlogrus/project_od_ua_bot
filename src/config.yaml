@@ -1,5 +1,5 @@
 ai_settings:
-  chat_model_name: "gpt-3.5-turbo"
+  chat_model_name: "gpt-3.5-turbo-16k-0613"
   image_model_name: "davinci"
   image_size: "512x512"
   max_tokens: 3500
