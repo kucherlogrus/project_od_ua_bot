@@ -1,13 +1,17 @@
 ai_settings:
-  chat_model_name: "gpt-3.5-turbo-16k-0613"
+  chat_model_name: "gpt-4o"
   image_model_name: "dall-e-3"
   image_size: "1024x1024"
-  max_tokens: 3500
+  max_tokens: 4096
   temperature: 1.0
+  tokens_per_message: 3
+  tokens_per_name: 1
 telegram_settings:
+  logs_dir:
   chat_trigger_regex: '(?=.*вал(ерка|ерчик|ерон|ера|ьтрон|ерончик|ьтрончик))(?=.*\?)'
   image_trigger_regex: '(нарисуй|сгенерируй) (изображение|картинку):'
   image_change_trigger_regex: '(отредактируй|измени) (изображение|картинку):'
+  image_vision_trigger_regex: '(опиши) (изображение|картинку):'
   white_lists_persons:
   black_lists_persons:
   white_lists_groups:

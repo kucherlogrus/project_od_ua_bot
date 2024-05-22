@@ -1,4 +1,6 @@
-openai
-python-telegram-bot[webhooks]
-pyyaml
+openai==1.30.1
+python-telegram-bot[webhooks]==21.2
+pyyaml==6.0.1
 Pillow
+tiktoken
+pydub

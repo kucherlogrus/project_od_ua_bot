@@ -15,15 +15,24 @@ def parse_configuration():
     path = parser.path
     if path != '':
         config = os.path.join(path, config)
-    file_path = os.path.join(path, config) if path != '' else os.path.dirname(os.path.abspath(__file__)) + "/config.yaml"
+    work_folder = os.path.dirname(os.path.abspath(__file__))
+
+    file_path = os.path.join(path, config) if path != '' else os.path.join(work_folder, "config.yaml")
     if not os.path.exists(file_path):
         raise Exception(f'Configuration file {file_path} not found')
     ext = config.split('.')[-1]
+    config = None
     if ext == 'yaml':
-        configuration = YamlConfiguration(file_path)
+        configuration = YamlConfiguration(file_path, work_folder)
         config = configuration.load()
-        return config
-    raise Exception(f'Unknown configuration file extension: {ext}')
+    if config is None:
+        raise Exception(f'Unknown configuration file extension: {ext}')
+    if not config.telegram_settings.logs_dir:
+        logs_dir = os.path.join(os.path.dirname(work_folder), 'history')
+        if not os.path.exists(logs_dir):
+            os.makedirs(logs_dir)
+        config.telegram_settings.logs_dir = logs_dir
+    return config
 
 
 def main():

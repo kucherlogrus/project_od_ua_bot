@@ -3,8 +3,9 @@ import yaml
 from .utils import DictToObj
 
 class BaseConfiguration:
-    def __init__(self, config_file):
+    def __init__(self, config_file, work_folder):
         self.config_file = config_file
+        self.work_folder = work_folder
 
     def load(self):
         raise NotImplementedError
