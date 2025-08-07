@@ -1,5 +1,5 @@
 ai_settings:
-  chat_model_name: "gpt-4o"
+  chat_model_name: "gpt-5"
   image_model_name: "dall-e-3"
   image_size: "1024x1024"
   max_tokens: 4096
